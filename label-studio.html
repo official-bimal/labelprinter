@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Studio — Thermal Sticker System</title>
+<style>
+  :root{
+    --ink:#16140f; --paper:#fbfaf6; --panel:#ffffff; --line:#e3ddcf;
+    --muted:#6f6857; --amber:#d98324; --amber-soft:#fbeede; --field:#f4f1e9;
+    --shadow:0 1px 0 rgba(0,0,0,.04), 0 12px 30px -18px rgba(40,34,20,.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+  .app{max-width:1040px;margin:0 auto;padding:26px 20px 70px}
+  header.masthead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:24px}
+  .masthead .tag{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  .masthead h1{font-size:25px;font-weight:800;letter-spacing:-.01em;line-height:1}
+  .masthead .spec{margin-left:auto;font-size:12px;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--panel)}
+
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
+  .card h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+    margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .card h2::before{content:"";width:7px;height:7px;background:var(--amber);border-radius:2px}
+
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+  label .hint{font-weight:400;color:var(--muted);margin-left:6px;font-size:11.5px}
+  input[type=text],input[type=number],select{width:100%;font-size:14.5px;padding:10px 12px;
+    background:var(--field);border:1px solid var(--line);border-radius:9px;color:var(--ink);
+    transition:border-color .15s,background .15s}
+  input:focus,select:focus{outline:none;border-color:var(--amber);background:#fff}
+  .row{display:flex;gap:10px}
+  .row .field{flex:1}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .grid4 label{font-size:11px;text-align:center}
+  .grid4 input{text-align:center;padding:9px 4px}
+
+  /* toggle row */
+  .toggle{display:flex;align-items:center;gap:10px;justify-content:space-between;
+    padding:9px 0;border-bottom:1px dashed var(--line)}
+  .toggle:last-child{border-bottom:none}
+  .toggle span{font-size:13px;font-weight:600}
+  .switch{position:relative;width:42px;height:24px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#d9d2c2;border-radius:999px;transition:.18s;cursor:pointer}
+  .slider::before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;
+    background:#fff;border-radius:50%;transition:.18s}
+  .switch input:checked + .slider{background:var(--amber)}
+  .switch input:checked + .slider::before{transform:translateX(18px)}
+
+  /* segmented control */
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--field)}
+  .seg button{flex:1;border:none;background:transparent;padding:9px 4px;cursor:pointer;
+    font-size:12.5px;font-weight:600;color:var(--ink);transition:background .12s}
+  .seg button.on{background:var(--ink);color:#fff}
+
+  .slide{display:flex;align-items:center;gap:12px}
+  .slide input[type=range]{flex:1;accent-color:var(--amber)}
+  .slide .val{width:46px;text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+  .stepper{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--field);width:150px}
+  .stepper button{width:42px;border:none;background:transparent;font-size:20px;cursor:pointer;color:var(--ink)}
+  .stepper button:hover{background:var(--amber-soft)}
+  .stepper input{border:none;border-radius:0;text-align:center;background:transparent;font-weight:700}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+    padding:14px;border:none;border-radius:10px;cursor:pointer;background:var(--ink);color:#fff;
+    font-size:15px;font-weight:700;transition:transform .06s,opacity .15s}
+  .btn:hover{opacity:.92}.btn:active{transform:translateY(1px)}.btn svg{width:18px;height:18px}
+  .btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line);margin-top:10px;font-size:13px;padding:11px}
+
+  /* preview */
+  .preview-wrap{position:sticky;top:22px}
+  .preview-stage{background:repeating-linear-gradient(45deg,#f1ede3 0 10px,#eee9dd 10px 20px);
+    border:1px solid var(--line);border-radius:14px;padding:34px 16px;display:flex;justify-content:center;
+    box-shadow:var(--shadow) inset;overflow:auto}
+  .label-shell{position:relative;transition:transform .15s}
+  .label-shell::before,.label-shell::after{content:"";position:absolute;left:-9px;right:-9px;
+    border-top:2px dashed #b9b09a}
+  .label-shell::before{top:-9px}.label-shell::after{bottom:-9px}
+  .zoombar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:var(--muted)}
+  .zoombar .zg{display:flex;gap:6px}
+  .zoombar button{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:5px 11px;
+    cursor:pointer;font-size:12px;font-weight:600;color:var(--ink)}
+  .zoombar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .note{margin-top:14px;font-size:12px;line-height:1.55;color:var(--muted);
+    background:var(--amber-soft);border:1px solid #f0dcc2;border-radius:10px;padding:11px 13px}
+  .note b{color:var(--ink)}
+
+  /* ---------- THE LABEL ---------- */
+  .label{background:#fff;color:#000;display:flex;flex-direction:column;justify-content:space-between;
+    overflow:hidden;box-sizing:border-box}
+  .label .ln{display:block;width:100%;white-space:nowrap;overflow:hidden;line-height:1.06}
+  .label .name{font-weight:800;text-transform:none}
+  .label.upper .name{text-transform:uppercase;letter-spacing:.02em}
+  .label .price{font-weight:800;line-height:1.0}
+  .label .dates .ln{font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .label .bcwrap{width:100%}
+  .label .bcwrap svg.bc{display:block}
+  .label .bctext{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;line-height:1.1}
+  .preview-stage .label{box-shadow:0 0 0 1px #d7cfba,0 8px 22px -12px rgba(0,0,0,.4)}
+
+  .print-area{position:fixed;left:-10000px;top:0}
+
+  @media print{
+    /* @page rule is injected dynamically via #pagestyle */
+    html,body{background:#fff;margin:0;padding:0}
+    .app{display:none !important}
+    .print-area{display:block !important;position:static !important;left:auto !important;top:auto !important}
+    .print-area .label{box-shadow:none !important;page-break-after:always;break-after:page}
+    .print-area .label:last-child{page-break-after:auto;break-after:auto}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="masthead">
+    <div><div class="tag">Thermal Sticker Studio</div><h1>Label Studio</h1></div>
+    <span class="spec mono" id="specBadge">50 × 20 mm</span>
+  </header>
+
+  <div class="grid">
+    <!-- ============ SETTINGS ============ -->
+    <div class="settings">
+
+      <section class="card">
+        <h2>Content</h2>
+        <div class="field"><label for="name">Product name</label>
+          <input id="name" type="text" value="Food Sathi" autocomplete="off"></div>
+        <div class="field"><label for="price">Price <span class="hint">shown as “Rs. …”</span></label>
+          <input id="price" class="mono" type="text" value="250" autocomplete="off"></div>
+        <div class="row">
+          <div class="field"><label for="mfd">MFD</label>
+            <input id="mfd" class="mono" type="text" value="2083/02/30" autocomplete="off"></div>
+          <div class="field"><label for="exp">EXP</label>
+            <input id="exp" class="mono" type="text" value="2083/03/15" autocomplete="off"></div>
+        </div>
+        <div class="field"><label for="bcval">Barcode value <span class="hint">Code 128</span></label>
+          <input id="bcval" class="mono" type="text" value="8901234567890" autocomplete="off"></div>
+      </section>
+
+      <section class="card">
+        <h2>Fields shown</h2>
+        <div class="toggle"><span>Product name</span><label class="switch"><input type="checkbox" id="show_name" checked><span class="slider"></span></label></div>
+        <div class="toggle"><span>Price</span><label class="switch"><input type="checkbox" id="show_price" checked><span class="slider"></span></label></div>
+        <div class="toggle"><span>MFD / EXP dates</span><label class="switch"><input type="checkbox" id="show_dates" checked><span class="slider"></span></label></div>
+        <div class="toggle"><span>Barcode</span><label class="switch"><input type="checkbox" id="show_bc" checked><span class="slider"></span></label></div>
+        <div class="toggle"><span>Barcode number text</span><label class="switch"><input type="checkbox" id="show_bctext" checked><span class="slider"></span></label></div>
+        <div class="toggle"><span>UPPERCASE name</span><label class="switch"><input type="checkbox" id="upper" checked><span class="slider"></span></label></div>
+      </section>
+
+      <section class="card">
+        <h2>Label size</h2>
+        <div class="field"><label for="preset">Preset</label>
+          <select id="preset">
+            <option value="50,20" selected>50 × 20 mm</option>
+            <option value="50,25">50 × 25 mm</option>
+            <option value="40,30">40 × 30 mm</option>
+            <option value="38,25">38 × 25 mm</option>
+            <option value="32,25">32 × 25 mm</option>
+            <option value="60,40">60 × 40 mm</option>
+            <option value="100,50">100 × 50 mm</option>
+            <option value="custom">Custom…</option>
+          </select></div>
+        <div class="row">
+          <div class="field"><label for="w">Width (mm)</label>
+            <input id="w" type="number" min="10" max="300" step="0.5" value="50"></div>
+          <div class="field"><label for="h">Height (mm)</label>
+            <input id="h" type="number" min="8" max="300" step="0.5" value="20"></div>
+        </div>
+        <div class="field"><label>Margins / padding (mm)</label>
+          <div class="grid4">
+            <div><input id="mt" type="number" min="0" step="0.5" value="1"><label>Top</label></div>
+            <div><input id="mr" type="number" min="0" step="0.5" value="1.5"><label>Right</label></div>
+            <div><input id="mb" type="number" min="0" step="0.5" value="1"><label>Bottom</label></div>
+            <div><input id="ml" type="number" min="0" step="0.5" value="1.5"><label>Left</label></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Layout &amp; type</h2>
+        <div class="field"><label>Alignment</label>
+          <div class="seg" id="alignSeg">
+            <button data-a="left">Left</button>
+            <button data-a="center" class="on">Center</button>
+            <button data-a="right">Right</button>
+          </div></div>
+        <div class="field"><label>Vertical spacing</label>
+          <div class="seg" id="justSeg">
+            <button data-j="space-between" class="on">Spread</button>
+            <button data-j="center">Center</button>
+            <button data-j="flex-start">Top</button>
+          </div></div>
+        <div class="field"><label for="font">Font family</label>
+          <select id="font">
+            <option value="sans" selected>Sans (Arial)</option>
+            <option value="condensed">Condensed (Arial Narrow)</option>
+            <option value="mono">Monospace</option>
+            <option value="serif">Serif (Georgia)</option>
+          </select></div>
+        <div class="field"><label>Name size <span class="hint">max, auto-shrinks</span></label>
+          <div class="slide"><input id="fs_name" type="range" min="6" max="28" step="0.5" value="13"><span class="val mono" id="v_name">13</span></div></div>
+        <div class="field"><label>Price size</label>
+          <div class="slide"><input id="fs_price" type="range" min="8" max="44" step="0.5" value="21"><span class="val mono" id="v_price">21</span></div></div>
+        <div class="field"><label>Dates size</label>
+          <div class="slide"><input id="fs_date" type="range" min="5" max="16" step="0.5" value="8"><span class="val mono" id="v_date">8</span></div></div>
+        <div class="field"><label>Barcode height (mm)</label>
+          <div class="slide"><input id="bc_h" type="range" min="3" max="25" step="0.5" value="7"><span class="val mono" id="v_bch">7</span></div></div>
+        <div class="field"><label>Barcode position</label>
+          <div class="seg" id="bcPosSeg">
+            <button data-p="top">Top</button>
+            <button data-p="middle">Middle</button>
+            <button data-p="bottom" class="on">Bottom</button>
+          </div></div>
+      </section>
+
+      <section class="card">
+        <h2>Print</h2>
+        <div class="field"><label for="qty">Quantity <span class="hint">copies</span></label>
+          <div class="stepper">
+            <button type="button" id="dec">−</button>
+            <input id="qty" class="mono" type="number" min="1" max="999" value="1">
+            <button type="button" id="inc">+</button>
+          </div></div>
+        <button class="btn" id="printBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          <span id="printLabel">Print 1 label</span>
+        </button>
+        <button class="btn ghost" id="resetBtn">Reset to defaults</button>
+      </section>
+    </div>
+
+    <!-- ============ PREVIEW ============ -->
+    <div class="preview-wrap">
+      <div class="card">
+        <h2>Live preview</h2>
+        <div class="preview-stage">
+          <div class="label-shell" id="shell"><div id="slot"></div></div>
+        </div>
+        <div class="zoombar">
+          <span>Actual print size</span>
+          <div class="zg">
+            <button data-z="1" class="on">1×</button>
+            <button data-z="2">2×</button>
+            <button data-z="3">3×</button>
+          </div>
+        </div>
+        <p class="note">In the print dialog set <b>Margins → None</b> and <b>Scale → 100%</b>, then pick your label/roll size. Text auto-shrinks to fit one line; the barcode is real <b>Code 128</b> and scannable when printed crisply.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style id="pagestyle"></style>
+<div class="print-area" id="printArea"></div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+
+  // ---------- Code 128 (pure JS) ----------
+  const C128=["212222","222122","222221","121223","121322","131222","122213","122312","132212","221213",
+  "221312","231212","112232","122132","122231","113222","123122","123221","223211","221132",
+  "221231","213212","223112","312131","311222","321122","321221","312212","322112","322211",
+  "212123","212321","232121","111323","131123","131321","112313","132113","132311","211313",
+  "231113","231311","112133","112331","132131","113123","113321","133121","313121","211331",
+  "231131","213113","213311","213131","311123","311321","331121","312113","312311","332111",
+  "314111","221411","431111","111224","111422","121124","121421","141122","141221","112214",
+  "112412","122114","122411","142112","142211","241211","221114","413111","241112","134111",
+  "111242","121142","121241","114212","124112","124211","411212","421112","421211","212141",
+  "214121","412121","111143","111341","131141","114113","114311","411113","411311","113141",
+  "114131","311141","411131","211412","211214","211232","2331112"];
+
+  function encode128(data){
+    data=String(data);
+    let codes;
+    const allDigits=/^\d+$/.test(data) && data.length>=2;
+    if(allDigits && data.length%2===0){               // Code 128C (compact, digits)
+      codes=[105];
+      for(let i=0;i<data.length;i+=2) codes.push(parseInt(data.substr(i,2),10));
+    }else{                                             // Code 128B
+      data=data.replace(/[^\x20-\x7E]/g,'');
+      codes=[104];
+      for(let i=0;i<data.length;i++) codes.push(data.charCodeAt(i)-32);
+    }
+    let sum=codes[0];
+    for(let i=1;i<codes.length;i++) sum+=codes[i]*i;
+    codes.push(sum%103);   // checksum
+    codes.push(106);       // stop
+    const mods=[];
+    for(const c of codes){
+      const p=C128[c]; let black=true;
+      for(const ch of p){const n=+ch; for(let k=0;k<n;k++) mods.push(black?1:0); black=!black;}
+    }
+    return mods;
+  }
+  function barcodeSVG(value,heightMM){
+    const data=String(value||'').trim();
+    if(!data) return '';
+    const mods=encode128(data), quiet=10, total=mods.length+quiet*2;
+    let rects='', i=0;
+    while(i<mods.length){
+      if(mods[i]===1){let w=1;while(mods[i+w]===1)w++;
+        rects+='<rect x="'+(i+quiet)+'" y="0" width="'+w+'" height="100" fill="#000"/>';i+=w;}
+      else i++;
+    }
+    return '<svg class="bc" viewBox="0 0 '+total+' 100" preserveAspectRatio="none" '+
+           'xmlns="http://www.w3.org/2000/svg" style="height:'+heightMM+'mm;width:100%">'+rects+'</svg>';
+  }
+
+  // ---------- State ----------
+  const DEF={name:"Food Sathi",price:"250",mfd:"2083/02/30",exp:"2083/03/15",bcval:"8901234567890",
+    show_name:true,show_price:true,show_dates:true,show_bc:true,show_bctext:true,upper:true,
+    w:50,h:20,mt:1,mr:1.5,mb:1,ml:1.5,align:"center",just:"space-between",font:"sans",
+    fs_name:13,fs_price:21,fs_date:8,bc_h:7,bcpos:"bottom",qty:1};
+  const FONTS={sans:'Arial,Helvetica,sans-serif',condensed:'"Arial Narrow",Arial,sans-serif',
+    mono:'ui-monospace,Menlo,Consolas,monospace',serif:'Georgia,"Times New Roman",serif'};
+
+  let align="center", just="space-between", bcpos="bottom", zoom=1;
+
+  function num(id){return parseFloat($(id).value)||0;}
+  function readState(){
+    return {
+      name:$('name').value, price:$('price').value, mfd:$('mfd').value, exp:$('exp').value, bcval:$('bcval').value,
+      show_name:$('show_name').checked, show_price:$('show_price').checked, show_dates:$('show_dates').checked,
+      show_bc:$('show_bc').checked, show_bctext:$('show_bctext').checked, upper:$('upper').checked,
+      w:num('w'), h:num('h'), mt:num('mt'), mr:num('mr'), mb:num('mb'), ml:num('ml'),
+      align, just, font:$('font').value,
+      fs_name:num('fs_name'), fs_price:num('fs_price'), fs_date:num('fs_date'), bc_h:num('bc_h'), bcpos
+    };
+  }
+
+  function priceText(raw){let v=(raw||'').trim();if(!v)return 'Rs.';
+    v=v.replace(/^\s*(rs\.?|₹)\s*/i,'');return 'Rs. '+v;}
+
+  // Build one label node from a state snapshot
+  function buildLabel(s){
+    const lab=document.createElement('div');
+    lab.className='label'+(s.upper?' upper':'');
+    lab.style.width=s.w+'mm'; lab.style.height=s.h+'mm';
+    lab.style.padding=s.mt+'mm '+s.mr+'mm '+s.mb+'mm '+s.ml+'mm';
+    lab.style.textAlign=s.align; lab.style.justifyContent=s.just;
+    lab.style.fontFamily=FONTS[s.font]||FONTS.sans;
+    lab.style.alignItems = s.align==='left'?'flex-start':s.align==='right'?'flex-end':'center';
+
+    const name = s.show_name ? '<span class="ln name" data-fit="name">'+esc(s.name||' ')+'</span>' : '';
+    const price= s.show_price? '<span class="ln price" data-fit="price">'+esc(priceText(s.price))+'</span>' : '';
+    const dates= s.show_dates? '<div class="dates">'+
+        '<span class="ln" data-fit="date">MFD: '+esc(s.mfd)+'</span>'+
+        '<span class="ln" data-fit="date">EXP: '+esc(s.exp)+'</span></div>' : '';
+    let bc='';
+    if(s.show_bc && (s.bcval||'').trim()){
+      const svg=barcodeSVG(s.bcval, s.bc_h);
+      const txt=s.show_bctext?'<div class="bctext" style="font-size:'+Math.max(5,s.fs_date-1.5)+'px">'+esc(s.bcval)+'</div>':'';
+      bc='<div class="bcwrap">'+svg+txt+'</div>';
+    }
+    const top = name+price;
+    let html='';
+    if(s.bcpos==='top')      html = bc + '<div>'+top+'</div>' + dates;
+    else if(s.bcpos==='middle') html = '<div>'+top+'</div>' + bc + dates;
+    else                     html = '<div>'+top+'</div>' + dates + bc; // bottom
+    lab.innerHTML=html;
+    return lab;
+  }
+  function esc(t){return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+  // Auto-shrink each text line to fit on one line
+  function fitLine(el,max,min){
+    let size=max; el.style.fontSize=size+'px'; let g=120;
+    while(el.scrollWidth>el.clientWidth+0.5 && size>min && g-->0){size-=0.5;el.style.fontSize=size+'px';}
+  }
+  function fitLabel(node,s){
+    node.querySelectorAll('[data-fit]').forEach(el=>{
+      const k=el.getAttribute('data-fit');
+      if(k==='name') fitLine(el,s.fs_name,5);
+      else if(k==='price') fitLine(el,s.fs_price,7);
+      else fitLine(el,s.fs_date,4);
+    });
+  }
+
+  // ---------- Render preview ----------
+  function render(){
+    const s=readState();
+    $('specBadge').textContent=s.w+' × '+s.h+' mm';
+    setPageStyle(s.w,s.h);
+    const node=buildLabel(s);
+    const slot=$('slot'); slot.innerHTML=''; slot.appendChild(node);
+    fitLabel(node,s);
+    $('shell').style.transform='scale('+zoom+')';
+    syncBtn();
+  }
+  function setPageStyle(w,h){
+    $('pagestyle').textContent='@media print{@page{size:'+w+'mm '+h+'mm;margin:0}}';
+  }
+  function clampQty(){let q=parseInt($('qty').value,10);if(isNaN(q)||q<1)q=1;if(q>999)q=999;return q;}
+  function syncBtn(){const q=clampQty();$('printLabel').textContent='Print '+q+(q===1?' label':' labels');}
+
+  // ---------- Print ----------
+  $('printBtn').addEventListener('click',()=>{
+    const s=readState(), q=clampQty(); $('qty').value=q;
+    const area=$('printArea'); area.innerHTML='';
+    const nodes=[];
+    for(let i=0;i<q;i++){const n=buildLabel(s);area.appendChild(n);nodes.push(n);}
+    nodes.forEach(n=>fitLabel(n,s));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
+  });
+
+  // ---------- Wiring ----------
+  const liveIds=['name','price','mfd','exp','bcval','show_name','show_price','show_dates','show_bc',
+    'show_bctext','upper','w','h','mt','mr','mb','ml','font','fs_name','fs_price','fs_date','bc_h'];
+  liveIds.forEach(id=>{const e=$(id);e.addEventListener('input',render);e.addEventListener('change',render);});
+
+  // sliders show value
+  [['fs_name','v_name'],['fs_price','v_price'],['fs_date','v_date'],['bc_h','v_bch']].forEach(([a,b])=>{
+    $(a).addEventListener('input',()=>$(b).textContent=$(a).value);
+  });
+
+  // preset
+  $('preset').addEventListener('change',()=>{
+    const v=$('preset').value; if(v==='custom')return;
+    const [w,h]=v.split(',');$('w').value=w;$('h').value=h;render();
+  });
+  ['w','h'].forEach(id=>$(id).addEventListener('input',()=>{$('preset').value='custom';}));
+
+  // segmented controls
+  function seg(elId,fn){
+    $(elId).querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+      $(elId).querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); fn(b); render();
+    }));
+  }
+  seg('alignSeg', b=>align=b.dataset.a);
+  seg('justSeg',  b=>just=b.dataset.j);
+  seg('bcPosSeg', b=>bcpos=b.dataset.p);
+
+  // qty stepper
+  $('qty').addEventListener('input',syncBtn);
+  $('inc').addEventListener('click',()=>{$('qty').value=clampQty()+1;syncBtn();});
+  $('dec').addEventListener('click',()=>{$('qty').value=Math.max(1,clampQty()-1);syncBtn();});
+
+  // zoom
+  document.querySelectorAll('.zoombar button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.zoombar button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); zoom=parseFloat(b.dataset.z); $('shell').style.transform='scale('+zoom+')';
+  }));
+
+  // reset
+  $('resetBtn').addEventListener('click',()=>{
+    for(const k in DEF){const e=$(k);if(!e)continue;
+      if(e.type==='checkbox')e.checked=DEF[k];else e.value=DEF[k];}
+    align='center';just='space-between';bcpos='bottom';
+    seg_set('alignSeg','a','center');seg_set('justSeg','j','space-between');seg_set('bcPosSeg','p','bottom');
+    $('v_name').textContent=DEF.fs_name;$('v_price').textContent=DEF.fs_price;
+    $('v_date').textContent=DEF.fs_date;$('v_bch').textContent=DEF.bc_h;
+    $('preset').value='50,20';render();
+  });
+  function seg_set(elId,attr,val){
+    $(elId).querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset[attr]===val));
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
